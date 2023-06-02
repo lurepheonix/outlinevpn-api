@@ -1,9 +1,10 @@
 {
-  "name": "outlinevpn-api",
-  "version": "2.2.0",
+  "name": "@lurepheonix/outlinevpn-api",
+  "version": "2.3.0",
   "description": "The Outline VPN API client",
   "license": "MIT",
-  "homepage": "https://github.com/murka/outlinevpn-api",
+  "homepage": "https://github.com/lurepheonix/outlinevpn-api",
+  "repository": "https://github.com/lurepheonix/outlinevpn-api.git",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -15,9 +16,9 @@
     "outline"
   ],
   "author": {
-    "name": "Danil Shaymurzin",
-    "email": "im@murka.me",
-    "url": "https://murka.me"
+    "name": "Ghostly Cat",
+    "email": "tghostlycat@gmail.com",
+    "url": "https://github.com/lurepheonix"
   },
   "devDependencies": {
     "@types/node": "^18.7.13",
