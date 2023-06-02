@@ -179,17 +179,19 @@ class OutlineVPN {
         return null
     }
 
-    // Rewrite to /access-keys/:id if https://github.com/Jigsaw-Code/outline-server/pull/1142 has been merged.
     public async getUser(id: string): Promise<User | false | null> {
-        const users = await this.getUsers()
-        if (users) {
-            for (const user of users) {
-                if(user.id === id) {
-                    return user
+        const response = await this.fetch({url: `${this.apiUrl}/access-keys/${id}`, method: 'GET'})
+        if (response !== null) {
+            let data: User | false = false
+            if(response.ok) {
+                try {
+                    const json = JSON.parse(response.body)
+                    data = json
+                } catch (err) {
+                    console.error(err)
                 }
             }
-        } else {
-            return users
+            return data
         }
         return null
     }
