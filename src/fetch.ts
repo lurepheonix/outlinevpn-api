@@ -11,49 +11,55 @@ export default async function fetchWithPin(
   req: HttpRequest,
   fingerprint: string,
   timeout: number = 10000,
-): Promise<HttpResponse> {
-  const response = await new Promise<IncomingMessage>((resolve, reject) => {
-    const options: https.RequestOptions = {
-      ...urlToHttpOptions(new URL(req.url)),
-      method: req.method,
-      headers: req.headers,
-      timeout,
-      signal: controller.signal,
-      rejectUnauthorized: false, // Disable certificate chain validation.
+): Promise<HttpResponse | null> {
+  let data = null
+  try {
+    const response = await new Promise<IncomingMessage>((resolve, reject) => {
+      const options: https.RequestOptions = {
+        ...urlToHttpOptions(new URL(req.url)),
+        method: req.method,
+        headers: req.headers,
+        timeout,
+        signal: controller.signal,
+        rejectUnauthorized: false, // Disable certificate chain validation.
+      }
+      const request = https.request(options, resolve).on('error', reject)
+
+      request.on('timeout', () => {
+        request.destroy();
+        controller.abort();
+        reject(new Error('Request timed out'));
+      });
+
+      if(request.socket) {
+        request.socket.on('secureConnect', () => {
+          const socket = request.socket as TLSSocket
+          const cert = socket.getPeerCertificate()
+          if (cert.fingerprint256 !== fingerprint) {
+            reject(new Error(`Certificate fingerprint does not match ${fingerprint}`))
+          }
+        })
+      }
+
+      if (req.body) {
+        request.write(req.body)
+      }
+
+      request.end()
+    })
+
+    const chunks: Buffer[] = []
+    for await (const chunk of response) {
+      chunks.push(chunk)
     }
-    const request = https.request(options, resolve).on('error', reject)
 
-    request.on('timeout', () => {
-      request.destroy();
-      controller.abort();
-      reject(new Error('Request timed out'));
-    });
-
-    if(request.socket) {
-      request.socket.on('secureConnect', () => {
-        const socket = request.socket as TLSSocket
-        const cert = socket.getPeerCertificate()
-        if (cert.fingerprint256 !== fingerprint) {
-          reject(new Error(`Certificate fingerprint does not match ${fingerprint}`))
-        }
-      })
+    data = {
+      status: response.statusCode,
+      ok: response.statusCode ? response.statusCode >= 200 && response.statusCode < 300 : false,
+      body: Buffer.concat(chunks).toString(),
     }
-
-    if (req.body) {
-      request.write(req.body)
-    }
-
-    request.end()
-  })
-
-  const chunks: Buffer[] = []
-  for await (const chunk of response) {
-    chunks.push(chunk)
+  } catch (err) {
+    console.error(err)
   }
-
-  return {
-    status: response.statusCode,
-    ok: response.statusCode ? response.statusCode >= 200 && response.statusCode < 300 : false,
-    body: Buffer.concat(chunks).toString(),
-  }
+  return data
 }

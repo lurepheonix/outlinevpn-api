@@ -22,174 +22,224 @@ class OutlineVPN {
         return await fetchWithPin(req, this.fingerprint, this.timeout)
     }
 
-    public async getServer(): Promise<Server> {
+    public async getServer(): Promise<Server | null> {
         const response = await this.fetch({ url: `${this.apiUrl}/server`, method: 'GET' })
-        if(response.ok) {
-            const json = JSON.parse(response.body)
-            return json
-        } else {
-            throw new Error('No server found')
+        if (response !== null) {
+            if(response.ok) {
+                const json = JSON.parse(response.body)
+                return json
+            }
         }
+        return null
     }
 
-    public async renameServer(name: string): Promise<boolean> {
+    public async renameServer(name: string): Promise<boolean | null> {
         const response = await this.fetch({
             url: `${this.apiUrl}/name`,
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name })
         })
-
-        return response.ok
+        if (response !== null) {
+            return response.ok
+        }
+        return null
     }
 
-    public async setDefaultDataLimit(bytes: number): Promise<boolean> {
+    public async setDefaultDataLimit(bytes: number): Promise<boolean | null> {
         const response = await this.fetch({
             url: `${this.apiUrl}/server/access-key-data-limit`,
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ limit: { bytes } })
         })
-
-        return response.ok
+        if (response !== null) {
+            return response.ok
+        }
+        return null
     }
 
-    public async deleteDefaultDataLimit(): Promise<boolean> {
+    public async deleteDefaultDataLimit(): Promise<boolean | null> {
         const response = await this.fetch({ url: `${this.apiUrl}/server/access-key-data-limit`,
             method: 'DELETE'
         })
-
-        return response.ok
+        if (response !== null) {
+            return response.ok
+        }
+        return null
     }
 
-    public async setHostnameForAccessKeys(hostname: string): Promise<boolean> {
+    public async setHostnameForAccessKeys(hostname: string): Promise<boolean | null> {
         const response = await this.fetch({ url: `${this.apiUrl}/server/hostname-for-access-keys`,
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ hostname })
         })
-
-        return response.ok
+        if (response !== null) {
+            return response.ok
+        }
+        return null
     }
 
-    public async setPortForNewAccessKeys(port: number): Promise<boolean> {
+    public async setPortForNewAccessKeys(port: number): Promise<boolean | null> {
         const response = await this.fetch({ url: `${this.apiUrl}/server/port-for-new-access-keys`,
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ port })
         })
-
-        return response.ok
+        if (response !== null) {
+            return response.ok
+        }
+        return null
     }
 
-    public async getDataUsage(): Promise<DataUsageByUser> {
+    public async getDataUsage(): Promise<DataUsageByUser | false | null> {
         const response = await this.fetch({ url: `${this.apiUrl}/metrics/transfer`, method: 'GET' })
-
-        if(response.ok) {
-            const json = JSON.parse(response.body)
-            return json
-        } else {
-            throw new Error('No server found')
+        if (response !== null) {
+            let data: DataUsageByUser | false = false
+            if(response.ok) {
+                try {
+                    const json = JSON.parse(response.body)
+                    data = json
+                } catch (err) {
+                    console.error(err)
+                }
+            }
+            return data
         }
+        return null
     }
 
-    public async getDataUserUsage(id: string): Promise<number> {
-        const { bytesTransferredByUserId } = await this.getDataUsage()
-
-        const userUsage = bytesTransferredByUserId[id]
-
-        if(userUsage) {
-            return userUsage
-        } else {
-            throw new Error('No user found, check metrics is enabled')
+    public async getDataUserUsage(id: string): Promise<number | null> {
+        const response = await this.getDataUsage()
+        if (response) {
+            const { bytesTransferredByUserId } = response
+            const userUsage = bytesTransferredByUserId[id]
+            if(userUsage) {
+                return userUsage
+            }
         }
+        return null
     }
 
-    public async getShareMetrics(): Promise<ServerMetrics> {
+    public async getShareMetrics(): Promise<ServerMetrics | false | null> {
         const response = await this.fetch({ url: `${this.apiUrl}/metrics/enabled`, method: 'GET' })
-
-        if(response.ok) {
-            const json = JSON.parse(response.body)
-            return json
-        } else {
-            throw new Error('No server found')
+        if (response !== null) {
+            let data: ServerMetrics | false = false
+            if(response.ok) {
+                try {
+                    const json = JSON.parse(response.body)
+                    data = json
+                } catch (err) {
+                    console.log(err)
+                }
+            }
+            return data
         }
+        return null
     }
 
-    public async setShareMetrics(metricsEnabled: boolean): Promise<boolean> {
+    public async setShareMetrics(metricsEnabled: boolean): Promise<boolean | null> {
         const response = await this.fetch({ url: `${this.apiUrl}/metrics/enabled`,
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ metricsEnabled })
         })
 
-        if(response.ok) {
-            const json = JSON.parse(response.body)
-            return json
-        } else {
-            throw new Error('No server found')
-        }
-    }
-
-    public async getUsers(): Promise<User[]> {
-        const response = await this.fetch({ url: `${this.apiUrl}/access-keys`, method: 'GET' })
-
-        if(response.ok) {
-            const { accessKeys } = JSON.parse(response.body)
-            return accessKeys
-        } else {
-            throw new Error('No server found')
-        }
-    }
-
-    // Rewrite to /access-keys/:id if https://github.com/Jigsaw-Code/outline-server/pull/1142 has been merged.
-    public async getUser(id: string): Promise<User|null> {
-        const users = await this.getUsers()
-
-        for (const user of users) {
-            if(user.id === id) {
-                return user
+        if (response !== null) {
+            let data = false
+            if(response.ok) {
+                try {
+                    const json = JSON.parse(response.body)
+                    data = json
+                } catch (err) {
+                    console.error(err)
+                }
             }
+            return data
         }
-
         return null
     }
 
-    public async createUser(): Promise<User> {
+    public async getUsers(): Promise<User[] | false | null> {
+        const response = await this.fetch({ url: `${this.apiUrl}/access-keys`, method: 'GET' })
+
+        if (response !== null) {
+            let data: User[] | false = false
+            if(response.ok) {
+                try {
+                    const { accessKeys } = JSON.parse(response.body)
+                    data = accessKeys
+                } catch (err) {
+                    console.error(err)
+                }
+            }
+            return data
+        }
+        return null
+    }
+
+    // Rewrite to /access-keys/:id if https://github.com/Jigsaw-Code/outline-server/pull/1142 has been merged.
+    public async getUser(id: string): Promise<User | false | null> {
+        const users = await this.getUsers()
+        if (users) {
+            for (const user of users) {
+                if(user.id === id) {
+                    return user
+                }
+            }
+        } else {
+            return users
+        }
+        return null
+    }
+
+    public async createUser(): Promise<User | false | null> {
         const response = await this.fetch({
             url: `${this.apiUrl}/access-keys`,
             method: 'POST'
         })
 
-        if(response.ok) {
-            const json = JSON.parse(response.body)
-            return json
-        } else {
-            throw new Error('No server found')
+        if (response !== null) {
+            let data: User | false = false
+            if(response.ok) {
+                try {
+                    const json = JSON.parse(response.body)
+                    data = json
+                } catch (err) {
+                    console.error(err)
+                }
+            }
+            return data
         }
+        return null
     }
 
-    public async deleteUser(id: string): Promise<boolean> {
+    public async deleteUser(id: string): Promise<boolean | null> {
         const response = await this.fetch({
             url: `${this.apiUrl}/access-keys/${id}`,
             method: 'DELETE'
         })
-
-        return response.ok
+        if (response !== null) {
+            return response.ok
+        }
+        return null
     }
 
-    public async renameUser(id: string, name: string): Promise<boolean> {
+    public async renameUser(id: string, name: string): Promise<boolean | null> {
         const response = await this.fetch({
             url: `${this.apiUrl}/access-keys/${id}/name`,
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name })
         })
-
-        return response.ok
+        if (response !== null) {
+            return response.ok
+        }
+        return null
     }
 
-    public async addDataLimit(id: string, bytes: number): Promise<boolean> {
+    public async addDataLimit(id: string, bytes: number): Promise<boolean | null> {
         const response = await this.fetch({
             url: `${this.apiUrl}/access-keys/${id}/data-limit`,
             method: 'PUT',
@@ -197,23 +247,28 @@ class OutlineVPN {
             body: JSON.stringify({ limit: { bytes } })
         })
 
-        return response.ok
+        if (response !== null) {
+            return response.ok
+        }
+        return null
     }
 
-    public async deleteDataLimit(id: string): Promise<boolean> {
+    public async deleteDataLimit(id: string): Promise<boolean | null> {
         const response = await this.fetch({
             url: `${this.apiUrl}/access-keys/${id}/data-limit`,
             method: 'DELETE'
         })
-
-        return response.ok
+        if (response !== null) {
+            return response.ok
+        }
+        return null
     }
 
-    public async disableUser(id: string): Promise<boolean> {
+    public async disableUser(id: string): Promise<boolean | null> {
         return await this.addDataLimit(id, 0)
     }
 
-    public async enableUser(id: string): Promise<boolean> {
+    public async enableUser(id: string): Promise<boolean | null> {
         return await this.deleteDataLimit(id)
     }
 
